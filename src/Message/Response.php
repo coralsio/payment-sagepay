@@ -1,0 +1,142 @@
+<?php
+
+namespace Corals\Modules\Payment\SagePay\Message;
+
+use Corals\Modules\Payment\Common\Message\AbstractResponse;
+use Corals\Modules\Payment\Common\Message\RedirectResponseInterface;
+use Corals\Modules\Payment\SagePay\Traits\ResponseFieldsTrait;
+
+/**
+ * Sage Pay Response
+ */
+class Response extends AbstractResponse implements RedirectResponseInterface, ConstantsInterface
+{
+    use ResponseFieldsTrait;
+
+    /**
+     * Gateway Reference
+     *
+     * Sage Pay requires the original VendorTxCode as well as 3 separate
+     * fields from the response object to capture or refund transactions at a later date.
+     *
+     * Active Merchant solves this dilemma by returning the gateway reference in the following
+     * format: VendorTxCode;VPSTxId;TxAuthNo;SecurityKey
+     *
+     * We have opted to return this reference as JSON, as the keys are much more explicit.
+     *
+     * @return string|null JSON formatted data.
+     */
+    public function getTransactionReference()
+    {
+        $reference = [];
+
+        foreach (['SecurityKey', 'TxAuthNo', 'VPSTxId', 'VendorTxCode'] as $key) {
+            $value = $this->getDataItem($key);
+
+            if ($value !== null) {
+                $reference[$key] = $value;
+            }
+        }
+
+        // The reference is null if we have no transaction details.
+
+        if (empty($reference)) {
+            return;
+        }
+
+        // Remaining transaction details supplied by the merchant site
+        // if not already in the response (it will be for Sage Pay Form).
+
+        if (!array_key_exists('VendorTxCode', $reference)) {
+            $reference['VendorTxCode'] = $this->getTransactionId();
+        }
+
+        ksort($reference);
+
+        return json_encode($reference);
+    }
+
+    /**
+     * The only reason supported for a redirect from a Server transaction
+     * will be 3D Secure. PayPal may come into this at some point.
+     *
+     * @return bool True if a 3DSecure Redirect needs to be performed.
+     */
+    public function isRedirect()
+    {
+        return $this->getStatus() === static::SAGEPAY_STATUS_3DAUTH;
+    }
+
+    /**
+     * @return string URL to 3D Secure endpoint.
+     */
+    public function getRedirectUrl()
+    {
+        if ($this->isRedirect()) {
+            return $this->getDataItem('ACSURL');
+        }
+    }
+
+    /**
+     * @return string The redirect method.
+     */
+    public function getRedirectMethod()
+    {
+        return 'POST';
+    }
+
+    /**
+     * The usual reason for a redirect is for a 3D Secure check.
+     * Note: when PayPal is supported, a different set of data will be returned.
+     *
+     * @return array Collected 3D Secure POST data.
+     */
+    public function getRedirectData()
+    {
+        if (isset($this->data['CReq'])) {
+            // 3DSv2
+            return [
+                'creq' => $this->data['CReq'],
+                'threeDSSessionData' => $this->data['VPSTxId'],
+            ];
+        } else {
+            // fallback from 3DSv2 to 3DSv1
+            return [
+                'PaReq' => $this->data['PAReq'],
+                'TermUrl' => $this->getRequest()->getReturnUrl(),
+                'MD' => $this->data['MD'],
+            ];
+        }
+    }
+
+    /**
+     * The Sage Pay ID to uniquely identify the transaction on their system.
+     * Only present if Status is OK or OK REPEATED.
+     *
+     * @return string
+     */
+    public function getVPSTxId()
+    {
+        return $this->getDataItem('VPSTxId');
+    }
+
+
+    public function getCReq()
+    {
+        return $this->getDataItem('CReq');
+    }
+
+    /**
+     * A secret used to sign the notification request sent direct to your
+     * application.
+     */
+    public function getSecurityKey()
+    {
+        return $this->getDataItem('SecurityKey');
+    }
+
+    public function getChargeReference()
+    {
+        return $this->getTransactionReference();
+    }
+}
