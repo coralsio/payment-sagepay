@@ -2,22 +2,27 @@
 
 namespace Corals\Modules\Payment\SagePay;
 
+use Corals\Foundation\Providers\BasePackageServiceProvider;
 use Corals\Modules\Payment\SagePay\Providers\SagePayRouteServiceProvider;
-use Illuminate\Support\ServiceProvider;
 use Corals\Settings\Facades\Modules;
 
-class SagePayServiceProvider extends ServiceProvider
+class SagePayServiceProvider extends BasePackageServiceProvide
 {
+    /**
+     * @var
+     */
     protected $defer = false;
-
+    /**
+     * @var
+     */
+    protected $packageCode = 'corals-payment-sagepay';
     /**
      * Bootstrap the application events.
      *
      * @return void
      */
-    public function boot()
+    public function bootPackage()
     {
-        $this->registerModulesPackages();
     }
 
     /**
@@ -25,7 +30,7 @@ class SagePayServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function register()
+    public function registerPackage()
     {
         $this->app->register(SagePayRouteServiceProvider::class);
     }
