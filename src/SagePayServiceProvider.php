@@ -6,7 +6,7 @@ use Corals\Foundation\Providers\BasePackageServiceProvider;
 use Corals\Modules\Payment\SagePay\Providers\SagePayRouteServiceProvider;
 use Corals\Settings\Facades\Modules;
 
-class SagePayServiceProvider extends BasePackageServiceProvide
+class SagePayServiceProvider extends BasePackageServiceProvider
 {
     /**
      * @var
