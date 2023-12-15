@@ -1,6 +1,8 @@
 # Corals Payment Sagepay
 
-This is where your description should go. Try and limit it to a paragraph or two. Consider adding a small example.
+* Laravel SagePay Payments Plugin for Laraship Platform is a one of a kind plugin that gives you the ability to allow the end user to do payments using a SagePay payment gateway.
+* The complete set of powerful payment features that enable fast, flexible, and seamless payment experiences is already built-in — helping you maximize business opportunities and accelerate growth.
+* SagePay is an online payment gateway offering a wide range of processing solutions for any business need.
 
 ## Installation
 
